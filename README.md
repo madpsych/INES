@@ -1,6 +1,6 @@
 # INES: Index of Number of Events and Severity
 
-This repository provides an R function, `compute_INES()`, which computes the INES score from a clinical dataset. INES is a continuous severity index ranging from 0 to 1, based on the lifetime burden of affective episodes, rapid cycling, psychosis, and illness duration.
+This repository provides an R function, `compute_INES()`, which computes the INES score from a clinical dataset. INES is a continuous severity index ranging from 0 to 10, based on the lifetime burden of affective episodes, rapid cycling, psychosis, and illness duration.
 
 The function is intended for researchers who already have their clinical variables recoded into the required categories.
 
@@ -25,7 +25,7 @@ For each individual, the INES score is computed as:
 ```
 sum_events = rapid_cycl_count + n_hosp_cat + n_sui_cat + n_manic_cat + n_depressive_cat + n_mixed_cat + psychosis + n_hipomanic_cat
 
-INES = log2(0.5 * (sum_events / log2(disease_years)) + 0.5 * sum_events + 1) / log2(25)
+INES = (log2(0.5 * (sum_events / log2(disease_years)) + 0.5 * sum_events + 1) / log2(25))*10
 ```
 
 ## How to use the function
