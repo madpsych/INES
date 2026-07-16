@@ -81,7 +81,7 @@ compute_INES <- function(df) {
     df$psychosis +
     df$n_hipomanic_cat
   
-  INES <- log2(0.5 * (sum_events / log2(df$disease_years)) + 0.5 * sum_events + 1) / log2(25)
+  INES <- (log2(0.5 * (sum_events / log2(df$disease_years)) + 0.5 * sum_events + 1) / log2(25))*10
 
   output_df <- data.frame(ID = df$ID, INES = INES)
   
