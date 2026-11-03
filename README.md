@@ -1,6 +1,6 @@
 # **INES**: Index of Number of Events and Severity
 
-This repository provides an R function, `compute_INES()`, which computes the INES score from a clinical dataset. INES is a continuous severity index ranging from 0 to 10, based on the lifetime burden of affective episodes, psychosis, and disease duration (DD), in years. The affective episodes considered are the following: depressive, manic, hipomanic. 
+This repository provides an R function, `compute_INES()`, which computes the INES score from a clinical dataset. INES is a continuous severity index ranging from 0 to 10, based on the lifetime burden of affective episodes, psychosis, and disease duration (DD), in years. The affective episodes considered are the following: depressive, manic, hipomanic. Number of lifetime psychiatric hospitalizations and suicide attempts are also considered.
 
 The function is intended for researchers who already have their clinical variables recoded into the required categories.
 
