@@ -1,31 +1,35 @@
-# INES: Index of Number of Events and Severity
+# **INES**: Index of Number of Events and Severity
 
-This repository provides an R function, `compute_INES()`, which computes the INES score from a clinical dataset. INES is a continuous severity index ranging from 0 to 10, based on the lifetime burden of affective episodes, rapid cycling, psychosis, and illness duration.
+This repository provides an R function, `compute_INES()`, which computes the INES score from a clinical dataset. INES is a continuous severity index ranging from 0 to 10, based on the lifetime burden of affective episodes, psychosis, and disease duration (DD), in years. The affective episodes considered are the following: depressive, manic, hipomanic. 
 
 The function is intended for researchers who already have their clinical variables recoded into the required categories.
 
 ## Required input
 
-The function expects a data.frame where each row corresponds to an individual. The following columns must be present and coded exactly as specified:
+The function requires a data.frame with one row per individual and the columns listed below. All variables must be named and coded exactly as specified.
 
-- ID: unique sample identifier (character or numeric)
-- rapid_cycl_count:0 = no rapid cycling, 3 = rapid cycling
-- psychosis: 0 = no psychosis, 3 = psychosis
-- n_hosp_cat (number of hospitalizations): 0 = none,1 = 1–2, 2 = 3–5, 3 = >5
-- n_sui_cat (number of suicide attempts): 0 = none,1 = 1–2, 2 = 3–5, 3 = >5
-- n_manic_cat (number of manic episodes): 0 = none,1 = 1–2, 2 = 3–5, 3 = >5
-- n_hipomanic_cat (number of hypomanic episodes): 0 = none,1 = 1–2, 2 = 3–5, 3 = >5
-- n_depressive_cat (number of depressive episodes): 0 = none,1 = 1–2, 2 = 3–5, 3 = >5
-- n_mixed_cat (number of mixed episodes): 0 = none,1 = 1–2, 2 = 3–5, 3 = >5
-- disease_years: duration of illness in years (numeric > 1). Individuals with disease_years ≤ 1 are automatically excluded.
+Lifetime counts of hospitalizations, suicide attempts, and mood episodes are grouped into four ordinal categories (0–3). Grade 0 indicates no events, whereas Grades 1–3 represent increasing event frequencies, with cutoffs derived from the 33rd and 66th percentiles of the non-zero event counts in the study cohort. The presence of psychosis or psychotic symptoms is recorded as +3, and is considered a modulator of the mood episodes.
+
+| Variable | Description | Required coding |
+|---|---|---|
+| `ID` | Unique individual identifier | Character or numeric |
+| `psychosis` | Lifetime history of psychosis | 0 = No; 3 = Yes |
+| `n_hosp_cat` | Lifetime number of hospitalizations | 0 = None; 1 = 1–2; 2 = 3–4; 3 = >4 |
+| `n_sui_cat` | Lifetime number of suicide attempts | 0 = None; 1 = 1; 2 = 2; 3 = >2 |
+| `n_manic_cat` | Lifetime number of manic episodes | 0 = None; 1 = 1–2; 2 = 3–5; 3 = >5 |
+| `n_hipomanic_cat` | Lifetime number of hypomanic episodes | 0 = None; 1 = 1–3; 2 = 4–10; 3 = >10 |
+| `n_depressive_cat` | Lifetime number of depressive episodes | 0 = None; 1 = 1–3; 2 = 4–10; 3 = >10 |
+| `disease_years` | Illness duration in years | Numeric, >1 |
+
+**Note**: Individuals with disease_years ≤ 1 are automatically excluded from the calculation. The category thresholds were established using the MadManic study cohort and should be applied consistently to external datasets to ensure comparability.
 
 ## INES formula
 
 For each individual, the INES score is computed as:
 ```
-sum_events = rapid_cycl_count + n_hosp_cat + n_sui_cat + n_manic_cat + n_depressive_cat + n_mixed_cat + psychosis + n_hipomanic_cat
+sum_events = n_hosp_cat + n_sui_cat + n_manic_cat + n_depressive_cat + psychosis + n_hipomanic_cat
 
-INES = (log2(0.5 * (sum_events / log2(disease_years)) + 0.5 * sum_events + 1) / log2(25))*10
+INES = (log2(0.5 * (sum_events / log2(disease_years)) + 0.5 * sum_events + 1) / log2(19))*10
 ```
 
 ## How to use the function
