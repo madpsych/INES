@@ -1,0 +1,4 @@
+ID,psychosis,n_hosp_cat,n_sui_cat,n_manic_cat,n_hipomanic_cat,n_depressive_cat,disease_years
+P001,3,1,0,1,0,2,10
+P002,0,0,1,0,2,2,5
+P003,0,0,0,0,0,0,3
