@@ -10,6 +10,8 @@ The function requires a data.frame with one row per individual and the columns l
 
 Lifetime counts of hospitalizations, suicide attempts, and mood episodes are grouped into four ordinal categories (0–3). Grade 0 indicates no events, whereas Grades 1–3 represent increasing event frequencies, with cutoffs derived from the 33rd and 66th percentiles of the non-zero event counts in the study cohort. The presence of psychosis or psychotic symptoms is recorded as +3, and is considered a modulator of the mood episodes.
 
+## INES formula
+
 The categorical coding on the default formula (`use.own.bins=F`) corresponds to:
 
 | Variable | Description | Categorical coding |
@@ -24,8 +26,6 @@ The categorical coding on the default formula (`use.own.bins=F`) corresponds to:
 | `disease_years` | Illness duration in years | Numeric, >1 |
 
 **Note**: Individuals with disease_years ≤ 1 are automatically excluded from the calculation. 
-
-## INES formula
 
 For each individual, the INES score is computed as:
 ```
