@@ -32,8 +32,14 @@ sum_events = n_hosp_cat + n_sui_cat + n_manic_cat + n_depressive_cat + psychosis
 INES = (log2(0.5 * (sum_events / log2(disease_years)) + 0.5 * sum_events + 1) / log2(19))*10
 ```
 
-## How to use the function
+## How to use **INES**
 
-```
+Source the scoring function in R and provide a data.frame:
+
+```R
+source("compute_INES.R")
+df_input <- read.csv("example_data.csv")
 result_INES <- compute_INES(df_input)
+result_INES[, c("ID", "Sum_INES", "INES")]
 ```
+This function does not perform KNN imputation or derive new percentile cutoffs.
