@@ -40,8 +40,19 @@ Source the scoring function in R and provide a data.frame:
 
 ```R
 source("compute_INES.R")
-df_input <- read.csv("example_data.csv")
-result_INES <- compute_INES(df_input)
-result_INES[, c("ID", "Sum_INES", "INES")]
+
+# Fixed MadManic bins (default)
+result <- compute_INES(df_input = df)
+
+# Cohort-specific tertile bins
+result <- compute_INES(
+  df_input = df,
+  use.own.bins = TRUE
+)
+
+# Retrieve scores and cutoffs
+df_scored <- result$data
+cutoffs <- result$cutoffs
 ```
-This function does not perform KNN imputation or derive new percentile cutoffs.
+
+This function does not perform KNN imputation of missing values: rows with any missing data do not return any INES.
