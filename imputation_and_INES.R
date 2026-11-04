@@ -11,29 +11,26 @@ library(VIM)
 library(writexl)
 
 ##############
-#CARGAR DATOS
+#Load data
 ##############
 
 df <- read_excel("Data_for_revision.xlsx")
 
-# Ver nombres de columnas
+# See column names
 names(df)
 head(df)
 
 ###################
-#Limpiar datos
+#Clean data
 ###################
-
-
-#Eliminar datos que ya no usamos (mixed y rapid cycling) y variables categoricas antiguas (vamos a establecer nuevos bins)
-
+#Remove unnecessary variables if present
 df_clean <- df %>%
   dplyr::select(-c("Rapid cycling YES/NO", "Categorical_mixed", "Number_mixed")) %>%
   dplyr::select(-c("Categorical_suicide_attempts", "Categorical_manic", "Categorical_depressive", "Categorical hipomanic", "Categorical_hospitalizations"))
 
-#Imputación KNN
+# KNN imputation of missing data points
 
-df_for_imputation <- df_clean %>% #quitamos lo que no queremos que afecte a la imputación (IDs y GAF, CGI, WHODAS)
+df_for_imputation <- df_clean %>% #remove variables not to be considered in imputation (IDs y GAF, CGI, WHODAS)
   select(
     -ID,
     -ID_complete,
@@ -41,13 +38,13 @@ df_for_imputation <- df_clean %>% #quitamos lo que no queremos que afecte a la i
     -GAF,
     -WHODAS
   ) %>%
-  mutate( #declaramos factores en las dicotomicas
+  mutate( #set as factor
     Sexo = as.factor(Sexo),
     BD_subtype = as.factor(BD_subtype),
     `Predominant polarity` = as.factor(`Predominant polarity`),
     `Psychosis YES/NO` = as.factor(`Psychosis YES/NO`)
   ) %>%
-  mutate( #establecemos como numéricas las demás
+  mutate( #set as numeric
     across(
       c(
         Edad,
@@ -63,17 +60,11 @@ df_for_imputation <- df_clean %>% #quitamos lo que no queremos que afecte a la i
     )
   )
 
-
-complete_data <- df_for_imputation[ #271 sin missing data
+complete_data <- df_for_imputation[ #271 complete data
   complete.cases(df_for_imputation),]
 
-
-
-#SELECCIÓN DE K CON LAS VARIABLES QUE VAMOS A IMPUTAR
-
+#Select K only with variables that are actually going to be imputed
 set.seed(1234)
-
-#Definir exactamente las variables que se van a imputar en la vida real
 vars_a_imputar <- c(
   "Number_suicide", 
   "Number_hosp", 
@@ -82,74 +73,67 @@ vars_a_imputar <- c(
   "Number_depressive"
 )
 
-
-prop_missing <- 0.20 #Crear una máscara de 20% DE NAs SOLO para esas 5 variables
+prop_missing <- 0.20 #Create a mask of 20% of NAs ONLY for those 5 variables
 mask <- matrix(FALSE, nrow = nrow(complete_data), ncol = ncol(complete_data))
 colnames(mask) <- colnames(complete_data)
 
-mask[, vars_a_imputar] <- matrix( #Generar NAs aleatorios únicamente en las 5 variables objetivo
+mask[, vars_a_imputar] <- matrix( #prodece random NAs 
   runif(nrow(complete_data) * length(vars_a_imputar)) < prop_missing,
   nrow = nrow(complete_data))
 
-data_missing <- complete_data #Crear data_missing introduciendo NAs solo en esas columnas
+data_missing <- complete_data 
 data_missing[mask] <- NA
 
-#Identificar columnas numéricas y factores
 num_cols <- sapply(complete_data, is.numeric)
 fact_cols <- sapply(complete_data, is.factor)
 
-#BUCLE PARA EVALUAR K SOBRE LAS 5 VARIABLES OBJETIVO
+#Loop to identify K
 
 ks <- 2:25
 rmse_vec <- numeric(length(ks))
 
 for(i in seq_along(ks)) {
   
-  imp <- kNN( #se prueba con las distintas K en un df que tiene todas las variables pero NA solo en las que nos importan
+  imp <- kNN( #try different K
     data_missing,
     k = ks[i],
     imp_var = FALSE
   )
   
-  #Evaluar el RMSE únicamente en las celdas ocultas de esas 5 variables
+  #evaluate RMSE only in the marsked cells 
   true_num <- as.numeric(as.matrix(complete_data)[mask])
   pred_num <- as.numeric(as.matrix(imp)[mask])
   rmse_vec[i] <- sqrt(mean((true_num - pred_num)^2, na.rm = TRUE))
 }
 
-#Guardar resultados
 results <- data.frame(
   k = ks,
   RMSE = rmse_vec)
 
-best_k <- results$k[which.min(results$RMSE)] #menor RMSE
+best_k <- results$k[which.min(results$RMSE)] #smallest RMSE
 print(results)
-cat("El k óptimo exacto para tus variables de episodios es:", best_k, "\n") #K = 3
+cat("Optimum K:", best_k, "\n") #K = 3
 
-#IMPUTACIÓN CON K ÓPTIMA
+#Impute with chosen K
 
-
-#Imputar sobre el dataset completo preparado para imputar
 df_imputed_vars <- kNN(
   df_for_imputation,
   k = best_k,
   imp_var = FALSE)
-
-#Reconstruir el dataset final
 df_final <- bind_cols(
   df_clean %>% select(ID, ID_complete, CGI, GAF, WHODAS),
   df_imputed_vars)
 
-#Verificar que las variables imputadas tengan 0 NAs
+#verify NAs
 colSums(is.na(df_final))
 
 #write_xlsx(df_final, "datos_tras_imputacion.xlsx")
 
 ######################
-#Calcular nuevos bins
+#Calculate bins
 ######################
 
-vars_eventos <- c( #definir las 5 variables de conteo
+vars_eventos <- c(
   "Number_suicide", 
   "Number_hosp", 
   "Number_manic", 
@@ -157,11 +141,10 @@ vars_eventos <- c( #definir las 5 variables de conteo
   "Number_depressive")
 
 tabla_terciles <- lapply(vars_eventos, function(var) {
-  #Filtrar solo casos con eventos (si es 0, se establece 0)
   vals <- df_final[[var]]
   vals_pos <- vals[vals > 0]
   
-  q <- quantile(vals_pos, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE) #Calcular percentiles de tercil
+  q <- quantile(vals_pos, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE) 
   
   data.frame(
     Variable = var,
@@ -175,12 +158,10 @@ tabla_terciles <- lapply(vars_eventos, function(var) {
 
 print(tabla_terciles)
 
-
-#APLICAR A LAS 5 VARIABLES (hosp, manic, hipomanic, depressive, suicide)
-
+#Apply to selected variables
 df_final <- df_final %>%
   mutate(
-    #Intentos de suicidio (P33 = 1, P66 = 2)
+    #suicide attempts (P33 = 1, P66 = 2)
     Categorica_Number_suicide = factor(case_when(
       Number_suicide == 0 ~ 0,
       Number_suicide == 1 ~ 1,
@@ -188,7 +169,7 @@ df_final <- df_final %>%
       Number_suicide >= 3 ~ 3
     ), levels = 0:3),
     
-    #Hospitalizaciones (P33 = 2, P66 = 4)
+    #Hospitalizations (P33 = 2, P66 = 4)
     Categorica_Number_hosp = factor(case_when(
       Number_hosp == 0 ~ 0,
       Number_hosp %in% 1:2 ~ 1,
@@ -196,7 +177,7 @@ df_final <- df_final %>%
       Number_hosp >= 5 ~ 3
     ), levels = 0:3),
     
-    #Episodios Maníacos (P33 = 2, P66 = 5)
+    #Manic episodes (P33 = 2, P66 = 5)
     Categorica_Number_manic = factor(case_when(
       Number_manic == 0 ~ 0,
       Number_manic %in% 1:2 ~ 1,
@@ -204,7 +185,7 @@ df_final <- df_final %>%
       Number_manic >= 6 ~ 3
     ), levels = 0:3),
     
-    #Episodios Hipomaníacos (P33 = 3, P66 = 10)
+    #Hipomanic episodes (P33 = 3, P66 = 10)
     Categorica_Number_hipomanic = factor(case_when(
       Number_hipomanic == 0 ~ 0,
       Number_hipomanic %in% 1:3 ~ 1,
@@ -212,7 +193,7 @@ df_final <- df_final %>%
       Number_hipomanic >= 11 ~ 3
     ), levels = 0:3),
     
-    #Episodios Depresivos (P33 = 3, P66 = 10)
+    #Depressive (P33 = 3, P66 = 10)
     Categorica_Number_depressive = factor(case_when(
       Number_depressive == 0 ~ 0,
       Number_depressive %in% 1:3 ~ 1,
@@ -220,9 +201,7 @@ df_final <- df_final %>%
       Number_depressive >= 11 ~ 3
     ), levels = 0:3)
   )
-
-
-#Ver la distribución de los bins y representar los gráficos
+#Check distribution and plot
 
 lapply(df_final %>% select(starts_with("Categorica_")), table, useNA = "ifany")
 
@@ -243,7 +222,6 @@ titulos <- c(
   "Depressive Episodes (Bins)"
 )
 
-#Generar y guardar cada gráfico (en la carpeta de histograms)
 for (i in seq_along(vars_cat)) {
   var <- vars_cat[i]
   title <- titulos[i]
@@ -269,9 +247,9 @@ for (i in seq_along(vars_cat)) {
       plot.title = element_text(face = "bold", hjust = 0.5, size = 12),
       panel.grid.major.x = element_blank()
     ) +
-    ylim(0, max(table(df_final[[var]])) * 1.15) # Espacio para el texto
+    ylim(0, max(table(df_final[[var]])) * 1.15) 
   
-  # Guardar en la carpeta histograms/
+
   ggsave(
     filename = file.path("histograms", paste0(var, "_new_bins.png")),
     plot = p,
@@ -281,7 +259,7 @@ for (i in seq_along(vars_cat)) {
   )
 }
 
-#Crear la variable psicosis con 0 o 3
+#Variable psicosis as 0 or 3
 
 df_final <- df_final %>%
   mutate( #Asigna 0 si es NO (0) y 3 si es SÍ (1)
@@ -292,12 +270,11 @@ df_final <- df_final %>%
 #write_xlsx(df_final, "datos_tras_imputacion.xlsx")
 
 ###############
-#Calcular INES 
+#Calculate INES 
 ###############
 
 df_final <- df_final %>%
   mutate(
-    # Extraer los valores numéricos de los factores categóricos
     num_suicide    = as.numeric(as.character(Categorica_Number_suicide)),
     num_hosp       = as.numeric(as.character(Categorica_Number_hosp)),
     num_manic      = as.numeric(as.character(Categorica_Number_manic)),
@@ -305,20 +282,19 @@ df_final <- df_final %>%
     num_depressive = as.numeric(as.character(Categorica_Number_depressive)),
     num_psychosis  = as.numeric(as.character(Categorical_psychosis)),
     
-    # Calcular la Suma (Máximo = 18)
+    # cumulative burden score (max = 18)
     Sum_INES = num_suicide + num_hosp + num_manic + num_hipomanic + num_depressive + num_psychosis,
     
-    # Aplicar la fórmula new_INES
+    # new_INES
     # log2(x) en R es log2(x)
     new_INES = (log2((Sum_INES / 2) * ((1 / log2(`Disease years`)) + 1) + 1) / log2(19)) * 10
   ) %>%
-  #Limpiar las columnas auxiliares numéricas intermedias
   select(-num_suicide, -num_hosp, -num_manic, -num_hipomanic, -num_depressive, -num_psychosis)
 
 #write_xlsx(df_final, "datos_tras_imputacion.xlsx")
 
 #############################################
-#Resumen estadístico del INES y distribución
+#Statisticsc summary and distribution
 #############################################
 
 df_final <- read_excel("datos_tras_imputacion.xlsx")
@@ -329,7 +305,7 @@ summary(df_final$new_INES)
 mean(df_final$new_INES) #5.576875
 sd(df_final$new_INES) #1.260412
 
-#Visualizar la distribución del nuevo índice en la muestra: histograma
+#histogram
 hist(df_final$new_INES, 
      main = "INES distribution", 
      xlab = "INES", 
@@ -337,7 +313,7 @@ hist(df_final$new_INES,
      breaks = 20)
 
 
-#Visualizar la distribución del nuevo índice en la muestra: density plot
+#density plot
 p_ines <- ggplot(df_final, aes(x = new_INES)) +
   geom_density(fill = "steelblue", color = "steelblue", linewidth = 1) +
   scale_x_continuous(limits = c(0, 10), breaks = 0:10) +
@@ -365,15 +341,8 @@ p_ines_hist <- ggplot(df_final, aes(x = new_INES)) +
   theme(plot.title = element_text(face = "bold", hjust = 0.5, size = 12),
         panel.grid = element_blank())
 
-#Guardar en la carpeta histograms/
 ggsave("histograms/density_new_INES.png", plot = p_ines, width = 7, height = 4, dpi = 300)
 ggsave("histograms/histogram_new_INES.png", plot = p_ines_hist, width = 7, height = 4, dpi = 300)
 
-
-
 print(p_ines)
 print(p_ines_hist)
-
-
-
-
