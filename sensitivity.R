@@ -9,22 +9,22 @@ library(tidyr)
 library(stringr)
 library(VIM)
 library(writexl)
-library(patchwork) #para organizar gráficos
-library(rstatix) #para polaridad predominante
+library(patchwork)
+library(rstatix) 
 
 ##############
-#CARGAR DATOS
+#load data
 ##############
 
 df_final <- read_excel("datos_tras_imputacion.xlsx")
 
 ####################################
-#Distribucion INES vs disease years
+#Distribution INES vs disease years
 ####################################
 
 p_years_vs_ines <- ggplot(df_final, aes(x = new_INES, y = `Disease years`)) +
   geom_point(color = "steelblue", alpha = 0.6, size = 2) +
-  #Añade una curva de tendencia suave (LOESS) para ver el patrón general
+  #add a soft-trend curve (LOESS) to check general pattern
   geom_smooth(method = "loess", color = "darkblue", fill = "lightblue", alpha = 0.3, se = TRUE) +
   scale_x_continuous(limits = c(0, 10), breaks = 0:10) +
   labs(
@@ -35,13 +35,13 @@ p_years_vs_ines <- ggplot(df_final, aes(x = new_INES, y = `Disease years`)) +
   theme_minimal() +
   theme(
     plot.title = element_text(face = "bold", hjust = 0.5, size = 12),
-    panel.grid = element_blank() # Elimina la cuadrícula
+    panel.grid = element_blank()
   )
 
 ggsave("histograms/scatterplot_DiseaseYears_vs_INES.png", plot = p_years_vs_ines, width = 7, height = 5, dpi = 300)
 print(p_years_vs_ines)
 
-#Grafico invertido --> es el bueno
+#inverted graph -> the good version
 
 p_ines_vs_years <- ggplot(df_final,
                           aes(x = `Disease years`,
@@ -62,7 +62,7 @@ ggsave("histograms/scatterplot_INES_vs_DiseaseYears.png", plot = p_ines_vs_years
 print(p_ines_vs_years)
 
 ####################################
-#Correlación INES vs disease years
+#correlation INES vs disease years
 ####################################
 
 cor.test(
@@ -80,7 +80,7 @@ cor.test(
 #S = 3595678, p = 6.384e-06, rho = 0.254373
 
 ###########################################################
-#Correlación de INES con n_hosp y n_sui (medidas gravedad)
+#correlation INES con n_hosp and n_sui 
 ###########################################################
 
 cor.test(df_final$new_INES, df_final$Number_hosp, method = "spearman")
