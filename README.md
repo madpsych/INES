@@ -2,11 +2,9 @@
 
 This repository provides an R function, `compute_INES()`, which computes the INES score from a clinical dataset. INES is a continuous severity index ranging from 0 to 10, based on the lifetime burden of affective episodes, psychosis, and disease duration (DD), in years. The affective episodes considered are the following: depressive, manic, hipomanic. Number of lifetime psychiatric hospitalizations and suicide attempts are also considered.
 
-The function is intended for researchers who already have their clinical variables recoded into the required categories.
-
 ## Required input
 
-The function requires a data.frame with one row per individual and the columns listed below. All variables must be named and coded exactly as specified. We have now adapted our INES, so it accepts raw counts of number of events during a lifetime: it is not necessary to transform the total number of events into their categorical group before running it. Also, with our new implementation the user can now calculate their own bin-ranges or categories within their own cohort. As INES was tested over N=307, we do not recommend to do so in smaller sample sizes unless INES is expected to vary in the user's chort population. More details on this on the main manuscript.
+The function requires a `data.frame` with one row per individual and the columns listed below. All variables must be named and coded exactly as specified. We have now adapted our INES, so it accepts raw counts of number of events during a lifetime: **it is not necessary to transform the total number of events into their categorical group before running it**. Also, with our new implementation the user can now calculate their own bin-ranges or categories within their own cohort. As INES was tested over N=307, we do not recommend to do so in smaller sample sizes unless INES is expected to vary in the user's cohort population. More details on this on the main manuscript.
 
 Lifetime counts of hospitalizations, suicide attempts, and mood episodes are grouped into four ordinal categories (0–3). Grade 0 indicates no events, whereas Grades 1–3 represent increasing event frequencies, with cutoffs derived from the 33rd and 66th percentiles of the non-zero event counts in the study cohort. The presence of psychosis or psychotic symptoms is recorded as +3, and is considered a modulator of the mood episodes.
 
